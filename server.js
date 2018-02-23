@@ -36,6 +36,9 @@ app.use(function(req, res, next) {
     next();
   }
 });
+// public routes
+let publicRoutes = require('./publicRoutes');
+publicRoutes(app);
 
 // auth0 JWT; reject requests that aren't authorized
 // client ID and secret should be stored in a .env file
@@ -47,9 +50,8 @@ app.use(jwt({
 // parse JSON in the body of requests
 app.use(bp.json());
 
-/**
- * Routes
- */
+// authenticated routes
+
 let routes = require('./routes');
 routes(app);
 
