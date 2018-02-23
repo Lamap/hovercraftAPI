@@ -1,0 +1,20 @@
+language: node_js
+services:
+  - mongodb
+env:
+  - APP="MyRestApi" CONNECTION="mongodb://localhost/test" AUTH0_SECRET="(oZhS6OJQ9s&_J52KqyU*BWgQX-vWbuigQl#7btZM0(2!1rVW(#cu&X@2qInY03o" AUTH0_ID="U18Wci8fuZ!UVWQGwD9sg0m%PbJXzLmF"
+node_js:
+  - 'stable'
+before_install:
+  - npm install -g nodemon mocha nyc
+before_script:
+  - sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6
+  - echo "deb [ arch=amd64 ] http://repo.mongodb.org/apt/ubuntu precise/mongodb-org/3.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.4.list
+  - sudo apt-get update
+  - sudo apt-get install -y mongodb-org
+  - sleep 15
+  - mongo --version
+script:
+  - npm test
+after_script:
+  - cat ./coverage/lcov.info | ./node_modules/.bin/coveralls
