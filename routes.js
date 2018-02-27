@@ -1,27 +1,16 @@
 'use strict';
 // import controllers
 let User = require('./controllers/user');
-let Activity = require('./controllers/activity');
+let jwt = require('express-jwt'); // for authentication with Auth0 JWT's
 
 // export route generating function
 module.exports = app => {
 
-  app.route('/users')
-    .get(User.getAll)
-    .post(User.create);
-
-  app.route('/users/:id')
-    .get(User.getOne)
-    .post(User.update)
-    .delete(User.delete);
-
-  app.route('/activities')
-    .get(Activity.getAll)
-    .post(Activity.create);
-
-  app.route('/activities/:id')
-    .get(Activity.getOne)
-    .post(Activity.update)
-    .delete(Activity.delete);
-
+  const auth = jwt({
+      secret: process.env.AUTH0_SECRET,
+      audience: process.env.AUTH0_ID
+  });
+  app.route('/test')
+    .get(auth, User.getAll)
+    .post(auth, User.create);
 };

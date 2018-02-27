@@ -1,6 +1,5 @@
 // import libraries
 let exp = require('express');     // to set up an express app
-let jwt = require('express-jwt'); // for authentication with Auth0 JWT's
 let bp  = require('body-parser'); // for parsing JSON in request bodies
 let mng = require('mongoose');    // for interacting with MongoDB
 
@@ -13,9 +12,15 @@ let RouteNotFoundError = require('./errors/route-not-found');
 // load environment variables
 require('dotenv').config();
 
-// connect to MongoDB
-mng.Promise = global.Promise
 mng.connect(process.env.CONNECTION);
+var db = mng.connection;
+
+db.on('error', function (err) {
+    console.error('MongodBb Error: ', err);
+});
+db.once('open', function() {
+    console.log('Connected to mongodDb');
+});
 
 // initialize app
 let app = exp();
@@ -40,27 +45,15 @@ app.use(function(req, res, next) {
 let publicRoutes = require('./publicRoutes');
 publicRoutes(app);
 
-// auth0 JWT; reject requests that aren't authorized
-// client ID and secret should be stored in a .env file
-app.use(jwt({
-  secret: process.env.AUTH0_SECRET,
-  audience: process.env.AUTH0_ID
-}));
-
 // parse JSON in the body of requests
 app.use(bp.json());
 
 // authenticated routes
-
 let routes = require('./routes');
 routes(app);
 
-/**
- * Postflight Middleware
- */
-// handle 404's
 app.use((req, res, next) => {
-  next(new RouteNotFoundError(`You have tried to access an API endpoint (${req.url}) that does not exist.`));
+    next(new RouteNotFoundError(`You have tried to access an API endpoint (${req.url}) that does not exist.`));
 });
 
 // handle errors (404 is not technically an error)
@@ -78,6 +71,9 @@ app.use((err, req, res, next) => {
     case 'RouteNotFoundError':
       res.status(404).json({ name: err.name, message: err.message });
       break;
+    case 'DbError':
+        res.status(500).json({ name: err.name, message: err.message });
+        break;
     default:
       res.status(400).json(err);
   }
