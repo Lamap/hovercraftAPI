@@ -5,30 +5,48 @@ let BadRequestError = require('../errors/bad-request');
 let DbError = require('../errors/dberror');
 
 const SRC_BASE = 'https://drive.google.com/thumbnail';
+const DEFAULT_PAGESIZE = 20;
 
 let imageFactory = (imageObject) => {
     return {
-        src: SRC_BASE + '?id=' + imageObject.googleId
+        src: SRC_BASE + '?id=' + imageObject.googleId,
+        tags: imageObject.tags
     }
 };
 
 module.exports = {
     getAll: (req, res, next) => {
         let query = {};
+        let totalCount = 0;
         if (req.query.tags instanceof Array && req.query.tags.length > 0) {
             query.tags = {
-                $all: req.query.tags
+                $all: req.query.tags,
             };
         }
-        Image.find(query, (err, images) => {
+        const pageSize = !isNaN(req.query.pageSize) ? req.query.pageSize : DEFAULT_PAGESIZE;
+        const pageIndex = !isNaN(req.query.pageIndex) ? req.query.pageIndex : 0;
+        const mongoExec = Image.find(query).limit(pageSize).skip(pageIndex);
+        Image.find(query).count((err, count) => {
             if (err) {
                 next(new DbError(`Could not get images: ${err}.`));
             }
-            let data = images.map((image) => {
-                return imageFactory(image);
-            });
+            totalCount = count;
 
-            res.json(data);
+            mongoExec.exec((err, images) => {
+                if (err) {
+                    next(new DbError(`Could not get images: ${err}.`));
+                }
+                let items = images.map((image) => {
+                    return imageFactory(image);
+                });
+
+                res.json({
+                    total: totalCount,
+                    pageIndex: pageIndex,
+                    pageSize: pageSize,
+                    items: items
+                });
+            });
         });
     },
     addTagToImage: (req, res, next) => {

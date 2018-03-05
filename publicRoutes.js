@@ -1,4 +1,5 @@
 let Image = require('./controllers/imageController');
+let Tag = require('./controllers/tagController');
 
 module.exports = app => {
 
@@ -14,5 +15,8 @@ module.exports = app => {
     app.route('/image/:id/tag/:tag')
         .put(Image.addTagToImage)
         .delete(Image.removeTagFromImage);
+
+    app.route('/tags')
+        .get(Tag.getAll);
 
 }
