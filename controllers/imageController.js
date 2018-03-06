@@ -23,18 +23,19 @@ module.exports = {
                 $all: req.query.tags,
             };
         }
-        const pageSize = !isNaN(req.query.pageSize) ? req.query.pageSize : DEFAULT_PAGESIZE;
-        const pageIndex = !isNaN(req.query.pageIndex) ? req.query.pageIndex : 0;
-        const mongoExec = Image.find(query).limit(pageSize).skip(pageIndex);
+        const pageSize = !isNaN(req.query.pageSize) ? Number(req.query.pageSize) : DEFAULT_PAGESIZE;
+        const pageIndex = !isNaN(req.query.pageIndex) ? Number(req.query.pageIndex) : 0;
+        const mongoExec = Image.find(query).limit(pageSize).skip(pageIndex * pageSize);
+
         Image.find(query).count((err, count) => {
             if (err) {
-                next(new DbError(`Could not get images: ${err}.`));
+                return next(new DbError(`Could not count images: ${err}.`));
             }
             totalCount = count;
 
             mongoExec.exec((err, images) => {
                 if (err) {
-                    next(new DbError(`Could not get images: ${err}.`));
+                    return next(new DbError(`Could not get images: ${err}.`));
                 }
                 let items = images.map((image) => {
                     return imageFactory(image);
@@ -44,7 +45,8 @@ module.exports = {
                     total: totalCount,
                     pageIndex: pageIndex,
                     pageSize: pageSize,
-                    items: items
+                    items: items,
+                    length: items.length
                 });
             });
         });
